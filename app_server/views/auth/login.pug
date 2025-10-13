@@ -1,13 +1,23 @@
+//- app_server/views/auth/login.pug
 extends ../layout
+
 block content
-  h1 Login
-  if errors
-    ul.error
-      each e in errors
-        li= e.msg
-  form(method='post', action='/auth/login')
-    label Email
-    input(type='email', name='email', required)
-    label Password
-    input(type='password', name='password', required)
-    button.btn(type='submit') Login
+  .auth-card
+    h1 Login
+    if error
+      .alert.alert-danger #{error}
+
+    form(action="/auth/login" method="post" autocomplete="off")
+      .form-row
+        label(for="email") Email
+        input#email(type="email" name="email" required placeholder="you@example.com")
+
+      .form-row
+        label(for="password") Password
+        input#password(type="password" name="password" required minlength="6" placeholder="••••••••")
+
+      button.btn.btn-primary(type="submit") Login
+
+    p.mt-3
+      | New to RentEase?
+      a(href="/auth/register") Create an account →

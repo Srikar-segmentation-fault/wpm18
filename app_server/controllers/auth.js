@@ -1,65 +1,146 @@
-const { body, validationResult } = require("express-validator");
+// app_server/controllers/auth.js
+const bcrypt = require("bcryptjs");
 const User = require("../models/user");
 const { issueToken } = require("../utils/auth");
 
-exports.getRegister = (req, res) =>
-  res.render("auth/register", { title: "Sign up" });
-exports.getLogin = (req, res) => res.render("auth/login", { title: "Login" });
+/* ---------- VIEWS ---------- */
+function showLogin(req, res) {
+  return res.render("auth/login", { title: "Login" });
+}
 
-exports.postRegister = [
-  body("name").notEmpty(),
-  body("email").isEmail(),
-  body("password").isLength({ min: 6 }),
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty())
-      return res
-        .status(400)
-        .render("auth/register", { title: "Sign up", errors: errors.array() });
-    const { name, email, password, role } = req.body;
-    if (await User.findOne({ email }))
-      return res
-        .status(400)
-        .render("auth/register", {
-          title: "Sign up",
-          errors: [{ msg: "Email already used" }],
-        });
-    const user = await User.create({ name, email, password, role });
-    res.cookie("token", issueToken(user), {
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-    res.redirect("/");
-  },
-];
+function showRegister(req, res) {
+  return res.render("auth/register", { title: "Sign up" });
+}
 
-exports.postLogin = [
-  body("email").isEmail(),
-  body("password").notEmpty(),
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty())
-      return res
-        .status(400)
-        .render("auth/login", { title: "Login", errors: errors.array() });
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    if (!user || !(await user.compare(password)))
+/* ---------- ACTIONS ---------- */
+async function login(req, res) {
+  try {
+    const email = (req.body.email || "").trim().toLowerCase();
+    const password = (req.body.password || "").trim();
+
+    if (!email || !password) {
       return res
         .status(400)
         .render("auth/login", {
           title: "Login",
-          errors: [{ msg: "Invalid credentials" }],
+          error: "Email and password are required.",
         });
-    res.cookie("token", issueToken(user), {
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-    res.redirect("/");
-  },
-];
+    }
 
-exports.logout = (req, res) => {
-  res.clearCookie("token");
-  res.redirect("/");
+    // Must be inside an async function — not top-level!
+    const user = await User.findOne({ email }).select(
+      "+passwordHash +role +name"
+    );
+    if (!user || !user.passwordHash) {
+      return res
+        .status(401)
+        .render("auth/login", {
+          title: "Login",
+          error: "Invalid email or password.",
+        });
+    }
+
+    let ok = false;
+    try {
+      ok = await bcrypt.compare(password, user.passwordHash);
+    } catch (e) {
+      ok = false;
+    }
+    if (!ok) {
+      return res
+        .status(401)
+        .render("auth/login", {
+          title: "Login",
+          error: "Invalid email or password.",
+        });
+    }
+
+    const token = issueToken(user);
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: "/",
+    });
+
+    return res.redirect("/properties");
+  } catch (err) {
+    console.error("Login error:", err);
+    return res
+      .status(500)
+      .render("error", {
+        title: "Error",
+        message: "Login failed. Please try again.",
+      });
+  }
+}
+
+async function register(req, res) {
+  try {
+    const name = (req.body.name || "").trim();
+    const email = (req.body.email || "").trim().toLowerCase();
+    const password = (req.body.password || "").trim();
+    const role = (req.body.role || "seeker").trim();
+
+    if (!name || !email || !password) {
+      return res
+        .status(400)
+        .render("auth/register", {
+          title: "Sign up",
+          error: "All fields are required.",
+        });
+    }
+
+    const exists = await User.findOne({ email });
+    if (exists) {
+      return res
+        .status(409)
+        .render("auth/register", {
+          title: "Sign up",
+          error: "Email already in use.",
+        });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await User.create({ name, email, role, passwordHash });
+
+    const token = issueToken(user);
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: "/",
+    });
+
+    return res.redirect("/properties");
+  } catch (err) {
+    console.error("Register error:", err);
+    return res
+      .status(500)
+      .render("error", {
+        title: "Error",
+        message: "Registration failed. Please try again.",
+      });
+  }
+}
+
+function logout(req, res) {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    path: "/",
+  });
+  return res.redirect("/");
+}
+
+/* ---------- EXPORTS ---------- */
+module.exports = {
+  showLogin,
+  showRegister,
+  login,
+  register,
+  logout,
 };

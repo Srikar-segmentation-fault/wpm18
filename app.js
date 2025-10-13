@@ -6,7 +6,7 @@ const methodOverride = require("method-override");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
-// ---- DB ----
+// ---- DB (connect early) ----
 require("./app_server/models/db");
 
 // ---- Routes ----
@@ -20,14 +20,20 @@ const app = express();
 app.set("views", path.join(__dirname, "app_server", "views"));
 app.set("view engine", "pug");
 
-// Static + parsers
+// Trust proxy so secure cookies work behind Render/Heroku load balancers
+app.set("trust proxy", 1);
+
+// ---- Static + parsers ----
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(methodOverride("_method"));
 
-// ---- Auth context: make user available everywhere ----
+// ---- Health check (useful for Render) ----
+app.get("/healthz", (_req, res) => res.status(200).send("ok"));
+
+// ---- Auth context: expose user to controllers & templates ----
 app.use((req, res, next) => {
   try {
     const token = req.cookies?.token;
@@ -39,7 +45,7 @@ app.use((req, res, next) => {
       req.user = null;
       res.locals.user = null;
     }
-  } catch (err) {
+  } catch (_err) {
     req.user = null;
     res.locals.user = null;
   }
@@ -52,12 +58,24 @@ app.use("/auth", authRoutes);
 app.use("/properties", propertyRoutes);
 app.use("/profile", profileRoutes);
 
-// Helpful shortcuts (optional)
-app.get("/login", (req, res) => res.redirect("/auth/login"));
-app.get("/register", (req, res) => res.redirect("/auth/register"));
-app.get("/dashboard", (req, res) =>
+// Helpful shortcuts
+app.get("/login", (_req, res) => res.redirect("/auth/login"));
+app.get("/register", (_req, res) => res.redirect("/auth/register"));
+app.get("/dashboard", (_req, res) =>
   res.redirect("/properties/owner/dashboard")
 );
+
+// ---- Global error handler (prevents 502 from uncaught errors) ----
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  if (res.headersSent) return next(err);
+  res
+    .status(500)
+    .render("error", {
+      title: "Server error",
+      message: "Something went wrong.",
+    });
+});
 
 // ---- 404 ----
 app.use((req, res) => {

@@ -1,19 +1,33 @@
+//- app_server/views/auth/register.pug
 extends ../layout
+
 block content
-  h1 Sign up
-  if errors
-    ul.error
-      each e in errors
-        li= e.msg
-  form(method='post', action='/auth/register')
-    label Name
-    input(type='text', name='name', required)
-    label Email
-    input(type='email', name='email', required)
-    label Password
-    input(type='password', name='password', required)
-    label Role
-    select(name='role')
-      option(value='seeker') Seeker
-      option(value='owner') Owner
-    button.btn(type='submit') Create account
+  .auth-card
+    h1 Sign up
+    if error
+      .alert.alert-danger #{error}
+
+    form(action="/auth/register" method="post" autocomplete="off")
+      .form-row
+        label(for="name") Name
+        input#name(type="text" name="name" required placeholder="Your name")
+
+      .form-row
+        label(for="email") Email
+        input#email(type="email" name="email" required placeholder="you@example.com")
+
+      .form-row
+        label(for="password") Password
+        input#password(type="password" name="password" required minlength="6" placeholder="Create a password")
+
+      .form-row
+        label(for="role") Role
+        select#role(name="role")
+          option(value="seeker" selected) Seeker
+          option(value="owner") Owner
+
+      button.btn.btn-primary(type="submit") Create account
+
+    p.mt-3
+      | Already have an account?
+      a(href="/auth/login") Log in →
