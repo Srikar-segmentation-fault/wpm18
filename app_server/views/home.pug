@@ -1,0 +1,10 @@
+extends layout
+
+block content
+  section.hero(style="text-align:center; padding:5rem 0;")
+    h1(style="font-size:3rem; font-weight:700; color:#fff;")
+      | Room hunting made effortless — join the RentEase way.
+    p(style="font-size:1.2rem; color:#ccc; margin-top:1rem; max-width:700px; margin-inline:auto;")
+      | Discover verified PGs, connect with owners, and simplify your rental search with RentEase.
+    // 👇 Redirect to login if user not logged in
+    a.btn.btn-light.mt-4(href=(user ? '/properties' : '/auth/login')) Explore Listings →

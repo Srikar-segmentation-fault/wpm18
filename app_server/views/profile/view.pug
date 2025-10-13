@@ -1,0 +1,13 @@
+extends ../layout
+block content
+  h1 Profile
+  form(method='post', action='/profile')
+    label Name
+    input(type='text', name='name', value=u.name, required)
+    label Phone
+    input(type='text', name='phone', value=u.phone)
+    label Avatar URL
+    input(type='url', name='avatarUrl', value=u.avatarUrl)
+    label Bio
+    textarea(name='bio')= u.bio
+    button.btn(type='submit') Save

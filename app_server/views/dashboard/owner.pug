@@ -1,0 +1,27 @@
+extends ../layout
+block content
+  h1 Owner Dashboard
+  h2 Your Listings
+  p: a.btn(href='/properties/owner/new') + Add listing
+  if props.length
+    each p in props
+      .card
+        h3: a(href=`/properties/${p._id}`)= p.title
+        p ₹#{p.rent}/month · #{p.city} · #{p.available ? 'Available' : 'Unavailable'}
+  else
+    p No listings yet.
+  h2 Incoming Booking Requests
+  if bookings.length
+    each b in bookings
+      .card
+        p
+          strong= b.requester ? b.requester.name : 'User'
+          |  requested 
+          strong= b.property ? b.property.title : 'listing'
+        p Status: #{b.status} · Requested: #{b.createdAt.toDateString()}
+        form(method='post', action=`/properties/booking/${b._id}/status`)
+          button.btn(type='submit', name='status', value='approved') Approve
+          |  
+          button.btn(type='submit', name='status', value='rejected') Reject
+  else
+    p No requests yet.

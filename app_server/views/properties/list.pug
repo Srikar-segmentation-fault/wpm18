@@ -1,0 +1,11 @@
+extends ../layout
+
+block content
+  h1 Listings
+  if properties && properties.length
+    ul
+      each p in properties
+        li
+          a(href=`/properties/${p._id}`)= `${p.title} — ₹${p.rent}/month`
+  else
+    p No listings yet.

@@ -1,0 +1,8 @@
+extends ../layout
+
+block content
+  h1= property.title
+  p #{property.address}, #{property.city}
+  p strong Rent: ₹#{property.rent}/month
+  if property.description
+    p= property.description

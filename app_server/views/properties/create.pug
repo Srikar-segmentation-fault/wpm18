@@ -1,0 +1,14 @@
+extends ../layout
+
+block content
+  h1 New Listing
+  form(method="post" action="/properties/owner/new")
+    label Title
+    input(type="text" name="title" required)
+    label Address
+    input(type="text" name="address" required)
+    label City
+    input(type="text" name="city" required)
+    label Rent (₹/month)
+    input(type="number" name="rent" required min="0")
+    button(type="submit") Create

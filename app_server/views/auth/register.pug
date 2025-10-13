@@ -1,0 +1,19 @@
+extends ../layout
+block content
+  h1 Sign up
+  if errors
+    ul.error
+      each e in errors
+        li= e.msg
+  form(method='post', action='/auth/register')
+    label Name
+    input(type='text', name='name', required)
+    label Email
+    input(type='email', name='email', required)
+    label Password
+    input(type='password', name='password', required)
+    label Role
+    select(name='role')
+      option(value='seeker') Seeker
+      option(value='owner') Owner
+    button.btn(type='submit') Create account
