@@ -1,27 +1,29 @@
+//- app_server/views/dashboard/owner.pug
 extends ../layout
+
 block content
-  h1 Owner Dashboard
+  .header-row(style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;")
+    h1 Owner Dashboard
+    a.btn-primary(href="/properties/new" style="text-decoration:none;") + Create New Listing
+
+  if user && user.name
+    p Hello, #{user.name}!
+
   h2 Your Listings
-  p: a.btn(href='/properties/owner/new') + Add listing
-  if props.length
-    each p in props
-      .card
-        h3: a(href=`/properties/${p._id}`)= p.title
-        p ₹#{p.rent}/month · #{p.city} · #{p.available ? 'Available' : 'Unavailable'}
+  - const list = Array.isArray(props) ? props : [];
+
+  if list.length
+    .grid(style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;")
+      each p in list
+        - const pid = (p && p._id) ? String(p._id) : '';
+        a.card(href='/properties/' + pid, style="display:block;padding:14px;border-radius:14px;background:#fff;box-shadow:0 6px 20px rgba(0,0,0,.09);text-decoration:none;color:#111;")
+          if p && Array.isArray(p.images) && p.images.length && p.images[0] && p.images[0].url
+            img(src=p.images[0].url, alt=(p && p.title ? p.title : 'Listing image'), style="width:100%;height:140px;object-fit:cover;border-radius:10px;")
+          h3(style="margin:10px 0 4px")= (p && p.title) ? p.title : 'Untitled'
+          p(style="margin:0;color:#666")= (p && p.city) ? p.city : ''
+          if p && typeof p.rent !== 'undefined'
+            p(style="margin:6px 0 0;color:#444") Base Rent: ₹#{p.rent}/month
   else
-    p No listings yet.
-  h2 Incoming Booking Requests
-  if bookings.length
-    each b in bookings
-      .card
-        p
-          strong= b.requester ? b.requester.name : 'User'
-          |  requested 
-          strong= b.property ? b.property.title : 'listing'
-        p Status: #{b.status} · Requested: #{b.createdAt.toDateString()}
-        form(method='post', action=`/properties/booking/${b._id}/status`)
-          button.btn(type='submit', name='status', value='approved') Approve
-          |  
-          button.btn(type='submit', name='status', value='rejected') Reject
-  else
-    p No requests yet.
+    p(style="color:#666") You haven’t created any listings yet.
+    a.btn-primary(href="/properties/new") + Create New Listing
+

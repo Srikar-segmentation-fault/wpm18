@@ -1,14 +1,107 @@
+//- views/properties/create.pug
 extends ../layout
 
 block content
   h1 New Listing
-  form(method="post" action="/properties/owner/new")
-    label Title
-    input(type="text" name="title" required)
-    label Address
-    input(type="text" name="address" required)
-    label City
-    input(type="text" name="city" required)
-    label Rent (₹/month)
-    input(type="number" name="rent" required min="0")
-    button(type="submit") Create
+
+  form(method="post", action="/properties/create", enctype="multipart/form-data" style="max-width:900px")
+    // --- Basic info ---
+    div
+      label(for="title") Title
+      input#title(type="text" name="title" required placeholder="OG Hostel")
+    div
+      label(for="address") Address
+      input#address(type="text" name="address" placeholder="Street, Area")
+    div
+      label(for="city") City
+      input#city(type="text" name="city" placeholder="Hyderabad")
+
+    // Base rent (kept for cards; per-person price can be set in sharing table)
+    div
+      label(for="rent") Base Rent (optional)
+      input#rent(type="number" name="rent" min="0" step="1" placeholder="5000")
+
+    div
+      label(for="facilities") Facilities (comma-separated)
+      input#facilities(type="text" name="facilities" placeholder="WiFi, AC, Laundry")
+
+    div
+      label(for="description") Description
+      textarea#description(name="description" rows="4" placeholder="Tell people about your PG/Hostel...")
+
+    // --- Images ---
+    h3(style="margin-top:1rem") Images
+    p Upload local images (stored under /uploads). You can also paste image URLs.
+    div
+      input(type="file" name="images" multiple accept="image/*")
+    div
+      label(for="imageUrls") Extra image URLs (comma-separated, optional)
+      input#imageUrls(type="text" name="imageUrls" placeholder="/uploads/a.jpg, /uploads/b.jpg")
+
+    // --- Sharing Basis ---
+    h3(style="margin-top:1rem") Sharing Basis
+    p Select which types you offer and fill counts/prices (per person).
+
+    table(style="width:100%;border-collapse:separate;border-spacing:0 8px")
+      thead
+        tr
+          th(style="text-align:left") Enable
+          th Type
+          th Capacity
+          th Total Rooms
+          th Available
+          th Price / person
+      tbody
+        //- Single
+        tr
+          td: input(type="checkbox" name="sharing[single][enabled]" value="1")
+          td Single Occupancy (1 person)
+          td 1
+          td: input(type="number" name="sharing[single][total]" min="0" value="0")
+          td: input(type="number" name="sharing[single][available]" min="0" value="0")
+          td: input(type="number" name="sharing[single][price]" min="0" value="0")
+        //- Double
+        tr
+          td: input(type="checkbox" name="sharing[double][enabled]" value="1")
+          td Double Occupancy (2 people)
+          td 2
+          td: input(type="number" name="sharing[double][total]" min="0" value="0")
+          td: input(type="number" name="sharing[double][available]" min="0" value="0")
+          td: input(type="number" name="sharing[double][price]" min="0" value="0")
+        //- Triple
+        tr
+          td: input(type="checkbox" name="sharing[triple][enabled]" value="1")
+          td Triple Occupancy (3 people)
+          td 3
+          td: input(type="number" name="sharing[triple][total]" min="0" value="0")
+          td: input(type="number" name="sharing[triple][available]" min="0" value="0")
+          td: input(type="number" name="sharing[triple][price]" min="0" value="0")
+        //- Quad
+        tr
+          td: input(type="checkbox" name="sharing[quad][enabled]" value="1")
+          td Quad Sharing (4 people)
+          td 4
+          td: input(type="number" name="sharing[quad][total]" min="0" value="0")
+          td: input(type="number" name="sharing[quad][available]" min="0" value="0")
+          td: input(type="number" name="sharing[quad][price]" min="0" value="0")
+        //- Multi
+        tr
+          td: input(type="checkbox" name="sharing[multi][enabled]" value="1")
+          td Multi-Sharing (4+ people)
+          td 4+
+          td: input(type="number" name="sharing[multi][total]" min="0" value="0")
+          td: input(type="number" name="sharing[multi][available]" min="0" value="0")
+          td: input(type="number" name="sharing[multi][price]" min="0" value="0")
+
+    div(style="margin-top:16px")
+      button.btn.btn-primary(type="submit") Create Listing
+
+  // --- Tiny styling for inputs (optional) ---
+  style.
+    form input[type="text"], form input[type="number"], form textarea, form select {
+      width: 100%; max-width: 560px; padding: 8px 10px; margin: 4px 0 10px;
+      border: 1px solid #ddd; border-radius: 8px;
+    }
+    table input[type="number"]{ width:120px; }
+    .btn{ padding:8px 14px; border-radius:10px; border:1px solid #ccc; cursor:pointer; }
+    .btn-primary{ background:#2563eb; color:#fff; border-color:#1d4ed8; }

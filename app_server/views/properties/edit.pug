@@ -1,0 +1,145 @@
+//- app_server/views/properties/edit.pug
+extends ../layout
+
+block content
+  h1 Edit Listing
+
+  // ===========================
+  // BASIC INFO + ADD IMAGES
+  // ===========================
+  form(method="post", action='/properties/' + property._id + '/update', enctype="multipart/form-data", style="max-width:960px")
+    //- Title
+    .form-row
+      label(for="title") Title
+      input#title(type="text", name="title", required, value=(property && property.title) ? property.title : '')
+
+    //- Address
+    .form-row
+      label(for="address") Address
+      input#address(type="text", name="address", value=(property && property.address) ? property.address : '')
+
+    //- City
+    .form-row
+      label(for="city") City
+      input#city(type="text", name="city", value=(property && property.city) ? property.city : '')
+
+    //- Base Rent
+    .form-row
+      - var rentVal = (property && typeof property.rent === 'number') ? property.rent : 0
+      label(for="rent") Base Rent (optional)
+      input#rent(type="number", name="rent", min="0", step="1", value=rentVal)
+
+    //- Facilities
+    .form-row
+      - var facilitiesVal = (property && Array.isArray(property.facilities)) ? property.facilities.join(', ') : ''
+      label(for="facilities") Facilities (comma-separated)
+      input#facilities(type="text", name="facilities", value=facilitiesVal)
+
+    //- Description
+    .form-row
+      label(for="description") Description
+      textarea#description(name="description", rows="4") #{(property && property.description) ? property.description : ''}
+
+    //- Add Images
+    .form-row
+      label(for="images") Add Images
+      input#images(type="file", name="images", multiple, accept="image/*")
+
+    // ===========================
+    // SHARING BASIS (EDITABLE)
+    // ===========================
+    h3(style="margin-top:1rem") Sharing Basis
+
+    - var sIdx = {};
+    - var currentSharing = (property && Array.isArray(property.sharingOptions)) ? property.sharingOptions : [];
+    - currentSharing.forEach(function(o){ if (o && o.key) sIdx[o.key] = o; });
+
+    - var rows = [
+    -   { key:'single', label:'Single Occupancy (1 person)', cap:'1' },
+    -   { key:'double', label:'Double Occupancy (2 people)', cap:'2' },
+    -   { key:'triple', label:'Triple Occupancy (3 people)', cap:'3' },
+    -   { key:'quad',   label:'Quad Sharing (4 people)',    cap:'4' },
+    -   { key:'multi',  label:'Multi-Sharing (4+ people)',  cap:'4+' },
+    - ];
+
+    table.sharing-table
+      thead
+        tr
+          th(style="text-align:left") Enable
+          th Type
+          th Capacity
+          th Total Rooms
+          th Available
+          th Price / person
+      tbody
+        each r in rows
+          - var cur   = sIdx[r.key] || null;
+          - var on    = !!cur;
+          - var total = (cur && typeof cur.totalUnits === 'number') ? cur.totalUnits : 0;
+          - var avail = (cur && typeof cur.availableUnits === 'number') ? cur.availableUnits : 0;
+          - var price = (cur && typeof cur.pricePerPerson === 'number') ? cur.pricePerPerson : 0;
+          tr
+            td
+              if on
+                input(type="checkbox", name='sharing[' + r.key + '][enabled]', value="1", checked)
+              else
+                input(type="checkbox", name='sharing[' + r.key + '][enabled]', value="1")
+            td= r.label
+            td= r.cap
+            td
+              input(type="number", name='sharing[' + r.key + '][total]', min="0", value=total)
+            td
+              input(type="number", name='sharing[' + r.key + '][available]', min="0", value=avail)
+            td
+              input(type="number", name='sharing[' + r.key + '][price]', min="0", value=price)
+
+    //- Submit
+    .form-actions
+      button.btn.btn-primary(type="submit") Save Changes
+
+  // ===========================
+  // CURRENT IMAGES (REMOVE)
+  // ===========================
+  if property && property.images && property.images.length
+    h3(style="margin-top:1.5rem") Current Images
+    form(method="post", action='/properties/' + property._id + '/images/remove')
+      .thumb-grid
+        each img in property.images
+          .thumb
+            img(src=img.url, alt="Image", class="thumb-img")
+            .thumb-row
+              if img && img.filename
+                input(type="checkbox", name="removeImages", value=img.filename, id=img.filename)
+                label(for=img.filename) Remove
+              else
+                span.thumb-note (URL-only image)
+      button.btn.btn-danger(type="submit", style="margin-top:8px") Remove selected
+
+  // ===========================
+  // OPTIONAL DEBUG (toggle quickly if needed)
+  // ===========================
+  //- h3 Debug (property JSON)
+  //- pre= JSON.stringify(property, null, 2)
+
+block append head
+  style.
+    .form-row{margin:10px 0;display:flex;flex-direction:column;max-width:560px}
+    .form-row > label{font-weight:600;margin-bottom:6px}
+    .form-row > input[type="text"],
+    .form-row > input[type="number"],
+    .form-row > textarea{
+      width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px
+    }
+    .form-actions{margin-top:16px}
+    .btn{padding:8px 14px;border-radius:10px;border:1px solid #ccc;cursor:pointer;background:#fff}
+    .btn-primary{background:#2563eb;color:#fff;border-color:#1d4ed8}
+    .btn-danger{background:#ef4444;color:#fff;border-color:#dc2626}
+
+    .sharing-table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    .sharing-table th,.sharing-table td{padding:6px 8px;border-bottom:1px solid #eef2f7}
+
+    .thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+    .thumb{border:1px solid #eee;border-radius:10px;padding:8px;background:#fff}
+    .thumb-img{width:100%;height:120px;object-fit:cover;border-radius:8px;display:block}
+    .thumb-row{display:flex;align-items:center;gap:6px;margin-top:6px}
+    .thumb-note{color:#999}

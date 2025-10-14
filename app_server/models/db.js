@@ -1,23 +1,24 @@
+// app_server/models/db.js
 const mongoose = require("mongoose");
 
-const uri = process.env.MONGO_URI; // <-- must be set on Render
-
+const uri = process.env.MONGO_URI;
 if (!uri) {
-  console.error(
-    "❌ MONGO_URI is not set. Configure it in Render → Environment."
-  );
+  console.error("❌ MONGO_URI is not set. Put it in your .env");
   process.exit(1);
 }
 
-mongoose
+mongoose.set("strictQuery", true);
+
+const connPromise = mongoose
   .connect(uri)
   .then((conn) => {
-    const host = conn.connection.host;
-    const dbname = conn.connection.name;
     console.log("✅ MongoDB Atlas connected successfully");
-    console.log(`→ Host: ${host}  DB: ${dbname}`);
+    return conn;
   })
   .catch((err) => {
     console.error("❌ MongoDB connection error:", err.message);
+    // Exit so nodemon restarts after you fix IP/credentials
     process.exit(1);
   });
+
+module.exports = { mongoose, connPromise };

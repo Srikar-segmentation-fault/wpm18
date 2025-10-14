@@ -1,14 +1,14 @@
 /* Base */
 :root {
-  --bg: #0c1117;
+  --bg: #040404;
   --panel: #121821;
   --line: #1f2835;
   --text: #e8eef6;
   --muted: #9fb0c7;
-  --brand: #e11d2e;
-  --brand-700: #b41723;
+  --brand: #f71818;
+  --brand-700: #fb3f26;
   --success: #22c55e;
-  --danger: #ef4444;
+  --danger: #d81060;
   --radius: 14px;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }

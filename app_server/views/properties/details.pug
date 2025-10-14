@@ -1,8 +1,129 @@
+//- views/properties/details.pug
 extends ../layout
 
 block content
   h1= property.title
   p #{property.address}, #{property.city}
-  p strong Rent: ₹#{property.rent}/month
-  if property.description
-    p= property.description
+  p Rent: ₹#{property.rent}/month
+
+  if property.images && property.images.length
+    .carousel
+      .track(tabindex="0" aria-label="Property images")
+        each img, i in property.images
+          .slide
+            img(src=img.url, alt=property.title + ' image ' + (i + 1))
+
+      // controls
+      button.prev(type="button" aria-label="Previous image") &#10094;
+      button.next(type="button" aria-label="Next image") &#10095;
+
+      .counter 1/#{property.images.length}
+
+      .dots
+        each img, i in property.images
+          button.dot(type="button", data-index=i, class=(i===0 ? 'active' : ''))
+  else
+    p No images uploaded yet.
+
+  // --- Owner-only upload / delete ---
+  - const ownerId = (property && property.owner && property.owner._id) ? String(property.owner._id) : String(property && property.owner);
+  - const isOwner = (user && user._id) ? String(user._id) === ownerId : false;
+
+  if isOwner
+    hr
+    h3 Add more images
+    form(method="post", action='/properties/' + property._id + '/images', enctype="multipart/form-data")
+      input(type="file" name="images" multiple accept="image/*" required)
+      button.btn.btn-primary(type="submit" style="margin-left:8px") Upload
+
+    if property.images && property.images.length
+      h3(style="margin-top:1rem") Delete an image
+      ul
+        each img in property.images
+          li
+            | #{img.filename || img.url}
+            if img.filename
+              form(method="post", action='/properties/' + property._id + '/images/' + img.filename + '/delete', style="display:inline;margin-left:8px")
+                button.btn.btn-danger(type="submit") Delete
+
+  // --- Inline styles & script so we don't depend on layout blocks ---
+  style.
+    .carousel{position:relative;margin:16px 0;border-radius:14px;overflow:hidden;background:#000;}
+    .carousel .track{
+      display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;
+      -webkit-overflow-scrolling:touch;scrollbar-width:none;
+    }
+    .carousel .track::-webkit-scrollbar{display:none;}
+    .carousel .slide{min-width:100%;height:54vh;max-height:520px;scroll-snap-align:center;position:relative;background:#111;}
+    .carousel img{width:100%;height:100%;object-fit:cover;display:block;}
+    .carousel .prev,.carousel .next{
+      position:absolute;top:50%;transform:translateY(-50%);z-index:2;
+      border:none;background:rgba(0,0,0,.45);color:#fff;width:40px;height:40px;
+      border-radius:999px;cursor:pointer;backdrop-filter:blur(4px);
+    }
+    .carousel .prev{left:10px;} .carousel .next{right:10px;}
+    .carousel .counter{
+      position:absolute;right:10px;top:10px;z-index:2;
+      background:rgba(0,0,0,.5);color:#fff;padding:4px 8px;border-radius:10px;font:500 12px/1.2 system-ui;
+    }
+    .carousel .dots{
+      position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:flex;gap:8px;z-index:2;
+    }
+    .carousel .dot{
+      width:8px;height:8px;border-radius:50%;border:none;background:rgba(255,255,255,.5);cursor:pointer;
+    }
+    .carousel .dot.active{background:#fff;width:22px;border-radius:999px;transition:width .2s ease;}
+
+  script.
+    (function () {
+      var root = document.querySelector('.carousel');
+      if (!root) return;
+      var track = root.querySelector('.track');
+      var slides = Array.prototype.slice.call(root.querySelectorAll('.slide'));
+      var prev = root.querySelector('.prev');
+      var next = root.querySelector('.next');
+      var dots = Array.prototype.slice.call(root.querySelectorAll('.dot'));
+      var counter = root.querySelector('.counter');
+
+      var i = 0;
+
+      function clamp(n, lo, hi){ return Math.max(lo, Math.min(hi, n)); }
+      function width(){ return track.clientWidth; }
+
+      function updateUI() {
+        dots.forEach(function (d, k) { d.classList.toggle('active', k === i); });
+        if (counter) counter.textContent = (i + 1) + '/' + slides.length;
+      }
+
+      function goTo(idx) {
+        i = clamp(idx, 0, slides.length - 1);
+        track.scrollTo({ left: i * width(), behavior: 'smooth' });
+        updateUI();
+      }
+
+      if (prev) prev.addEventListener('click', function(){ goTo(i - 1); });
+      if (next) next.addEventListener('click', function(){ goTo(i + 1); });
+      dots.forEach(function (d) {
+        d.addEventListener('click', function (e) { goTo(+e.currentTarget.getAttribute('data-index')); });
+      });
+
+      var raf = false;
+      track.addEventListener('scroll', function () {
+        if (raf) return;
+        raf = true;
+        requestAnimationFrame(function () {
+          raf = false;
+          i = clamp(Math.round(track.scrollLeft / width()), 0, slides.length - 1);
+          updateUI();
+        });
+      }, { passive: true });
+
+      track.addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowRight') goTo(i + 1);
+        if (e.key === 'ArrowLeft')  goTo(i - 1);
+      });
+
+      window.addEventListener('resize', function(){ goTo(i); });
+
+      goTo(0);
+    })();

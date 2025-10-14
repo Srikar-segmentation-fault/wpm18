@@ -5,9 +5,8 @@ const cookieParser = require("cookie-parser");
 const methodOverride = require("method-override");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-
-// ---- DB (connect early) ----
-require("./app_server/models/db");
+// app.js (top)
+require("./app_server/models/db"); // <-- make sure we connect to MongoDB before routes/controllers run
 
 // ---- Routes ----
 const indexRoutes = require("./app_server/routes/index");
@@ -29,6 +28,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(methodOverride("_method"));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // ---- Health check (useful for Render) ----
 app.get("/healthz", (_req, res) => res.status(200).send("ok"));
@@ -69,12 +69,10 @@ app.get("/dashboard", (_req, res) =>
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
   if (res.headersSent) return next(err);
-  res
-    .status(500)
-    .render("error", {
-      title: "Server error",
-      message: "Something went wrong.",
-    });
+  res.status(500).render("error", {
+    title: "Server error",
+    message: "Something went wrong.",
+  });
 });
 
 // ---- 404 ----

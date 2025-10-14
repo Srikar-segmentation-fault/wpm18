@@ -1,11 +1,21 @@
+//- views/properties/list.pug
 extends ../layout
 
 block content
   h1 Listings
+
   if properties && properties.length
-    ul
+    .grid(style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem;")
       each p in properties
-        li
-          a(href=`/properties/${p._id}`)= `${p.title} — ₹${p.rent}/month`
+        .card(style="border:1px solid #eee;border-radius:12px;overflow:hidden;background:#fff;")
+          - const thumb = (p.images && p.images[0] && p.images[0].url) ? p.images[0].url : '/images/no-image.jpg'
+          a(href=`/properties/${p._id}`)
+            img(src=thumb alt=p.title style="width:100%;height:160px;object-fit:cover;display:block;")
+          .body(style="padding:12px;")
+            h3(style="margin:0 0 6px 0")= p.title
+            if p.city
+              p(style="margin:0;color:#666") #{p.city}
+            if p.rent
+              p(style="margin:6px 0 0 0") Rent: ₹#{p.rent}/month
   else
     p No listings yet.
